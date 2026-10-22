@@ -21,7 +21,6 @@ Set-Location $Dir
 
 $NodeDir = Join-Path $Dir ".node"
 $NodeExe = Join-Path $NodeDir "node.exe"
-$NpmCli = Join-Path $NodeDir "node_modules\npm\bin\npm-cli.js"
 
 if (-not (Test-Path $NodeExe)) {
     Write-Host "Fetching portable Node.js $NodeVersion..." -ForegroundColor Cyan
@@ -33,12 +32,18 @@ if (-not (Test-Path $NodeExe)) {
     Remove-Item $zip -Force
 }
 
-# Ensure Node is first on PATH for any child processes
+# Create a node.cmd shim so anything looking for "node" finds it
+@"
+@echo off
+"%~dp0node.exe" %*
+"@ | Set-Content -Path (Join-Path $NodeDir "node.cmd") -Encoding ASCII
+
+# Force Node dir to the front of PATH for this session and children
 $env:PATH = "$NodeDir;$env:PATH"
 
 Write-Host "Installing dependencies..." -ForegroundColor Cyan
-# Call npm-cli.js directly through node.exe so scripts always find node
-& $NodeExe $NpmCli install --no-fund --no-audit
+# Use cmd /c with explicit PATH so npm's postinstall scripts see node
+cmd /c "set PATH=$NodeDir;%PATH% && npm install --no-fund --no-audit"
 
 if (-not (Test-Path ".env") -and (Test-Path ".env.example")) {
     Copy-Item ".env.example" ".env"
@@ -46,4 +51,4 @@ if (-not (Test-Path ".env") -and (Test-Path ".env.example")) {
 
 Write-Host "Starting Lantern on http://127.0.0.1:$Port" -ForegroundColor Green
 Start-Process "http://127.0.0.1:$Port"
-& $NodeExe $NpmCli run dev
+cmd /c "set PATH=$NodeDir;%PATH% && npm run dev"
