@@ -33,6 +33,9 @@ if (-not (Test-Path $NodeExe)) {
     Remove-Item $zip -Force
 }
 
+# Put Node on PATH so postinstall scripts (esbuild, etc.) can find node
+$env:PATH = "$NodeDir;$env:PATH"
+
 Write-Host "Installing dependencies..." -ForegroundColor Cyan
 & $Npm install --no-fund --no-audit
 
