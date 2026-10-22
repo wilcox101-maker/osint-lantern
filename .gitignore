@@ -39,6 +39,9 @@ yarn-error.log*
 /data/*.json
 /data/*.tmp
 
+# portable Node used by run-lantern.ps1
+.node/
+
 # vercel
 .vercel
 
