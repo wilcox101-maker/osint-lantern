@@ -21,7 +21,7 @@ Set-Location $Dir
 
 $NodeDir = Join-Path $Dir ".node"
 $NodeExe = Join-Path $NodeDir "node.exe"
-$Npm = Join-Path $NodeDir "npm.cmd"
+$NpmCli = Join-Path $NodeDir "node_modules\npm\bin\npm-cli.js"
 
 if (-not (Test-Path $NodeExe)) {
     Write-Host "Fetching portable Node.js $NodeVersion..." -ForegroundColor Cyan
@@ -33,11 +33,12 @@ if (-not (Test-Path $NodeExe)) {
     Remove-Item $zip -Force
 }
 
-# Put Node on PATH so postinstall scripts (esbuild, etc.) can find node
+# Ensure Node is first on PATH for any child processes
 $env:PATH = "$NodeDir;$env:PATH"
 
 Write-Host "Installing dependencies..." -ForegroundColor Cyan
-& $Npm install --no-fund --no-audit
+# Call npm-cli.js directly through node.exe so scripts always find node
+& $NodeExe $NpmCli install --no-fund --no-audit
 
 if (-not (Test-Path ".env") -and (Test-Path ".env.example")) {
     Copy-Item ".env.example" ".env"
@@ -45,4 +46,4 @@ if (-not (Test-Path ".env") -and (Test-Path ".env.example")) {
 
 Write-Host "Starting Lantern on http://127.0.0.1:$Port" -ForegroundColor Green
 Start-Process "http://127.0.0.1:$Port"
-& $Npm run dev
+& $NodeExe $NpmCli run dev
